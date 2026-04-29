@@ -19,7 +19,7 @@ The goal of this repository is to document the full engineering process behind t
 **Controller:** Matrix Mini R4  
 **Programming Language:** Arduino C++  
 
-[ADD TEAM PHOTO HERE]
+<img width="2048" height="1536" alt="image" src="https://github.com/user-attachments/assets/daa82aaf-4b5f-44bb-97ae-74dda7e2682d" />
 
 ---
 
