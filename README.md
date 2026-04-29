@@ -1,4 +1,4 @@
-# wro-future-engineers-the-good-boys
+<img width="1600" height="1200" alt="image" src="https://github.com/user-attachments/assets/00e0eb8d-ff64-4d0d-8393-3c6fc805f6b7" /># wro-future-engineers-the-good-boys
 Engineering documentation and source code for The Good Boys WRO Future Engineers self-driving robot using Matrix Mini R4, Arduino C++, servo steering, rear-wheel drive, laser sensor, AI camera, and color line detection.
 # WRO Future Engineers Documentation  
 ## Team: The Good Boys
@@ -27,7 +27,7 @@ The goal of this repository is to document the full engineering process behind t
 
 Our robot uses a rear-wheel drive system and a front steering system. The rear axle is powered by one motor, which drives the robot forward. The rear axle is supported with bearings to reduce friction and keep the wheels aligned while moving.
 
-For steering, the robot uses a servo motor connected to a front axle. The front axle holds two wheels, and both wheels are attached with separate bearings. This allows the servo to rotate the steering axle smoothly and control the direction of the robot during autonomous movement.
+For steering, the robot uses a servo motor connected to a front axle. The front axle holds two wheels, and both wheels are attached with a single connector and axle. This allows the servo to rotate the steering axle smoothly and control the direction of the robot during autonomous movement.
 
 The robot uses multiple sensors to understand the field:
 
@@ -37,7 +37,7 @@ The robot uses multiple sensors to understand the field:
 
 The robot is programmed using Arduino C++ through the Matrix Mini R4 system.
 
-[ADD FULL ROBOT PHOTO HERE]
+<img width="1600" height="1200" alt="image" src="https://github.com/user-attachments/assets/bbf78ad0-5eea-48f8-979c-6dfe739cef8e" />
 
 ---
 
@@ -49,9 +49,9 @@ The mechanical design is based on a simple and stable four-wheel vehicle structu
 
 The robot uses one motor connected to the rear axle. The motor transfers motion to the rear axle, allowing the rear wheels to push the robot forward. This design was chosen because it keeps the driving system simple and direct.
 
-The rear axle is supported with bearings. The purpose of the bearings is to reduce friction, improve smooth rotation, and keep the axle stable during movement.
+The rear axle is supported with a single axle and one connector. The purpose of the connector is to reduce friction, improve smooth rotation, and keep the axle stable during movement.
 
-[ADD PHOTO OF REAR AXLE AND MOTOR HERE]
+<img width="1600" height="1200" alt="image" src="https://github.com/user-attachments/assets/546b2a87-f985-4b3c-9d84-46c32da37d73" />
 
 ## 3.2 Front Steering System
 
@@ -61,18 +61,14 @@ The servo motor controls the turning direction of the robot by rotating the fron
 
 This design was chosen because the WRO Future Engineers challenge requires controlled movement around the track, and a servo-based steering system gives the robot more precise turning control.
 
-[ADD PHOTO OF SERVO STEERING SYSTEM HERE]
+<img width="1600" height="1200" alt="image" src="https://github.com/user-attachments/assets/a85ea278-1a16-4228-a25c-5eeb42d99e47" />
 
 ## 3.3 Chassis and Structure
 
 The robot is built using the Matrix kit structure. The chassis holds the controller, motor, servo, sensors, and wiring in fixed positions. The structure is designed to keep the robot stable while still allowing access to the main components for testing and repair.
 
-[ADD TOP VIEW PHOTO OF ROBOT HERE]  
-[ADD BOTTOM VIEW PHOTO OF ROBOT HERE]  
-[ADD LEFT SIDE PHOTO HERE]  
-[ADD RIGHT SIDE PHOTO HERE]  
-[ADD FRONT PHOTO HERE]  
-[ADD BACK PHOTO HERE]
+<img width="1600" height="1200" alt="image" src="https://github.com/user-attachments/assets/64adda7d-c5f5-48fe-b17e-8e7950c5d3d0" />
+<img width="1600" height="1200" alt="image" src="https://github.com/user-attachments/assets/b2b25e62-6910-4756-a674-4987ddfc27f3" />
 
 ---
 
@@ -92,8 +88,8 @@ The main electrical components are:
 
 The controller is responsible for reading sensor values, processing the robot’s position, deciding the next movement, and controlling the motor and servo.
 
-[ADD WIRING PHOTO HERE]  
-[ADD WIRING DIAGRAM HERE]
+<img width="1200" height="1600" alt="image" src="https://github.com/user-attachments/assets/d298f63c-c7eb-4c20-8f56-bc7d9d0c66f9" />
+
 
 ---
 
