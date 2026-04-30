@@ -168,9 +168,6 @@ The basic open challenge logic is:
 
 This method is stronger than only using time because line counting is based on the actual field position. If the robot moves slightly faster or slower, the line count still gives it a way to know where it is.
 
-[ADD OPEN CHALLENGE VIDEO LINK HERE]  
-[ADD OPEN CHALLENGE CODE LINK HERE]
-
 ---
 
 # 8. Obstacle Challenge Strategy
@@ -192,9 +189,6 @@ The basic obstacle challenge logic is:
 7. Adjust steering and movement based on sensor readings.
 8. Avoid obstacles and continue around the field.
 9. Stop after completing the required task.
-
-[ADD OBSTACLE CHALLENGE VIDEO LINK HERE]  
-[ADD OBSTACLE CHALLENGE CODE LINK HERE]
 
 ---
 
