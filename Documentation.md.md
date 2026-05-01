@@ -1,3 +1,12 @@
+<p align="center">
+  <img src="images/team-logo-or-robot-banner.jpg" width="700">
+</p>
+
+<h1 align="center">WRO Future Engineers Documentation</h1>
+
+<p align="center">
+  <b>The Good Boys</b> | Autonomous Self-Driving Robot | Matrix Mini R4 + Arduino C++
+</p>
 Engineering documentation and source code for The Good Boys WRO Future Engineers self-driving robot using Matrix Mini R4, Arduino C++, servo steering, rear-wheel drive, laser sensor, AI camera, and color line detection.
 # WRO Future Engineers Documentation  
 ## Team: The Good Boys
