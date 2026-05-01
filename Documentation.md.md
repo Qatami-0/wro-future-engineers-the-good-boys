@@ -1,5 +1,6 @@
 <p align="center">
-  <img src="images/team-logo-or-robot-banner.jpg" width="700">
+  <img src="<img width="891" height="260" alt="image" src="https://github.com/user-attachments/assets/f8e63075-f91b-4319-8ddc-509c835ae9d3" />
+" width="700">
 </p>
 
 <h1 align="center">WRO Future Engineers Documentation</h1>
