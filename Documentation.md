@@ -244,8 +244,6 @@ The robot code is organized by challenge type. Each section contains the Arduino
 | Open Challenge Code | Controls autonomous driving using line detection and line counting | [View Open Challenge Code](./Open%20Challenge%20Code) |
 | Obstacle Challenge Code | Controls obstacle navigation using distance sensing and camera input | [View Obstacle Challenge Code](./Obstacle%20Challenge%20Code) |
 
-> If the links do not open, rename the folders or update the links so they match the exact file or folder names in the repository.
-
 ---
 
 ## Open Challenge Strategy
