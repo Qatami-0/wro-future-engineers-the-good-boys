@@ -193,6 +193,10 @@ In the open challenge, the robot uses the color sensor to detect orange and blue
 
 This is important because the robot cannot simply drive for a fixed amount of time. A timer would become inaccurate if the battery level changes, if the robot slips, or if the robot turns differently. Counting lines gives the robot a better way to track its progress around the field.
 
+<p align="center">
+  <b>Image needed:</b> Bottom color sensor placement
+</p>
+
 ---
 
 ### Laser Distance Sensor
@@ -201,6 +205,10 @@ The laser distance sensor is used to measure distance from objects or walls. Thi
 
 The sensor can be used to help the robot avoid collisions, correct its path, or decide when to turn.
 
+<p align="center">
+  <b>Image needed:</b> Laser distance sensor placement
+</p>
+
 ---
 
 ### AI Camera
@@ -208,6 +216,10 @@ The sensor can be used to help the robot avoid collisions, correct its path, or 
 The AI camera is used for object recognition and obstacle detection. It helps the robot identify objects during the obstacle challenge and adjust its movement based on what it sees.
 
 The AI camera adds another layer of sensing beyond simple line and distance detection. This is useful because the obstacle challenge requires the robot to react to objects in the field rather than only following a fixed route.
+
+<p align="center">
+  <b>Image needed:</b> AI camera placement
+</p>
 
 ---
 
@@ -232,6 +244,10 @@ The program is divided into two main challenge modes:
 |---|---|
 | Open Challenge Code | Drives around the field using line detection and line counting |
 | Obstacle Challenge Code | Uses sensors and camera input to react to obstacles |
+
+<p align="center">
+  <b>Image needed:</b> Screenshot of code file structure
+</p>
 
 ---
 
@@ -264,3 +280,80 @@ Each time the robot detects an orange or blue line, the code updates a variable.
 5. Increase the line count whenever a valid line is detected.
 6. Continue driving until the target number of lines is reached.
 7. Stop the robot.
+```
+
+This method is stronger than only using time because line counting is based on the actual field position. If the robot moves slightly faster or slower, the line count still gives it a way to know where it is.
+
+---
+
+## Obstacle Challenge Strategy
+
+In the obstacle challenge, the robot must drive autonomously while reacting to blocks and nearby walls. This challenge uses the same basic driving system as the open challenge, but it adds camera-based block detection and stronger distance sensing.
+
+The robot uses the bottom color sensor to detect orange and blue lines, just like in the open challenge. These lines help the robot decide its driving direction and count its progress around the field.
+
+The obstacle challenge also uses the AI camera to detect red and green blocks. When the camera detects a red block, the robot steers to the right. When the camera detects a green block, the robot steers to the left. This allows the robot to react to the obstacle color instead of following only a fixed route.
+
+The front laser sensor is used to detect close objects or walls in front of the robot. If the robot gets too close to a wall while it is not tracking a block, it stops, reverses, and turns away. This helps prevent the robot from crashing into the field boundary.
+
+The left laser sensor is used for soft wall stabilization. If the robot is too close to the left wall, it slightly steers right. If it is too far from the left wall, it slightly steers left. This helps the robot stay more stable while driving around the field.
+
+### Obstacle Challenge Logic
+
+```text
+1. Start the robot.
+2. Read the front laser sensor, left laser sensor, bottom color sensor, and AI camera.
+3. Use the bottom color sensor to detect orange and blue lines.
+4. Decide the driving direction based on the first valid colored line.
+5. Count valid colored lines to track the robot’s progress.
+6. Use the AI camera to detect red and green blocks.
+7. If a red block is detected, steer right.
+8. If a green block is detected, steer left.
+9. If a front wall is detected and no block is being tracked, stop, reverse, and turn away.
+10. Use the left laser sensor to make small steering corrections near the wall.
+11. Continue driving until the target number of lines is reached.
+12. Stop the robot after completing the required route.
+```
+
+This strategy is stronger than using only line detection because the robot can react to obstacles in real time. The camera allows the robot to respond to block color, while the laser sensors help it avoid walls and keep a stable path.
+
+---
+
+## Robot Gallery
+
+<table>
+  <tr>
+    <td align="center">
+      <img width="250" alt="Robot gallery 1" src="https://github.com/user-attachments/assets/bbf78ad0-5eea-48f8-979c-6dfe739cef8e"><br>
+      <sub>Robot overview</sub>
+    </td>
+    <td align="center">
+      <img width="250" alt="Robot gallery 2" src="https://github.com/user-attachments/assets/546b2a87-f985-4b3c-9d84-46c32da37d73"><br>
+      <sub>Rear drive system</sub>
+    </td>
+    <td align="center">
+      <img width="250" alt="Robot gallery 3" src="https://github.com/user-attachments/assets/a85ea278-1a16-4228-a25c-5eeb42d99e47"><br>
+      <sub>Front steering system</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img width="250" alt="Robot gallery 4" src="https://github.com/user-attachments/assets/64adda7d-c5f5-48fe-b17e-8e7950c5d3d0"><br>
+      <sub>Chassis structure</sub>
+    </td>
+    <td align="center">
+      <img width="250" alt="Robot gallery 5" src="https://github.com/user-attachments/assets/b2b25e62-6910-4756-a674-4987ddfc27f3"><br>
+      <sub>Component placement</sub>
+    </td>
+    <td align="center">
+      <img width="250" alt="Robot gallery 6" src="https://github.com/user-attachments/assets/d298f63c-c7eb-4c20-8f56-bc7d9d0c66f9"><br>
+      <sub>Electrical system</sub>
+    </td>
+  </tr>
+</table>
+
+---
+
+<p align="center">
+  <b>End of Documentation</b>
+</p>
