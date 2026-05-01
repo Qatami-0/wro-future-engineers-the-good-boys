@@ -1,6 +1,5 @@
 <p align="center">
-  <img src="<img width="891" height="260" alt="image" src="https://github.com/user-attachments/assets/f8e63075-f91b-4319-8ddc-509c835ae9d3" />
-" width="700">
+  <img src="https://assets.skyfilabs.com/images/blog/tips-to-increase-the-chances-of-winning-wro.webp" width="700" alt="World Robot Olympiad logo">
 </p>
 
 <h1 align="center">WRO Future Engineers Documentation</h1>
@@ -8,31 +7,63 @@
 <p align="center">
   <b>The Good Boys</b> | Autonomous Self-Driving Robot | Matrix Mini R4 + Arduino C++
 </p>
-Engineering documentation and source code for The Good Boys WRO Future Engineers self-driving robot using Matrix Mini R4, Arduino C++, servo steering, rear-wheel drive, laser sensor, AI camera, and color line detection.
-# WRO Future Engineers Documentation  
-## Team: The Good Boys
 
-This repository contains the engineering documentation and source code for **The Good Boys**, a team participating in the **WRO Future Engineers self-driving car challenge**.
-
-Our vehicle is designed to complete both the open challenge and the obstacle challenge using a Matrix Mini R4 controller, Arduino C++ programming, rear-wheel drive, servo steering, line detection, distance sensing, and camera-based object recognition.
-
-The goal of this repository is to document the full engineering process behind the robot, including the mechanical design, electrical system, sensor layout, software logic, testing process, and final challenge strategies.
-
----
-
-# 1. Team Information
-
-**Team Name:** The Good Boys  
-**Competition Category:** WRO Future Engineers  
-**Robot Type:** Autonomous self-driving vehicle  
-**Controller:** Matrix Mini R4  
-**Programming Language:** Arduino C++  
-
-<img width="2048" height="1536" alt="image" src="https://github.com/user-attachments/assets/daa82aaf-4b5f-44bb-97ae-74dda7e2682d" />
+<p align="center">
+  <img src="https://img.shields.io/badge/WRO-Future%20Engineers-blue" alt="WRO Future Engineers">
+  <img src="https://img.shields.io/badge/Team-The%20Good%20Boys-red" alt="Team The Good Boys">
+  <img src="https://img.shields.io/badge/Controller-Matrix%20Mini%20R4-green" alt="Matrix Mini R4">
+  <img src="https://img.shields.io/badge/Code-Arduino%20C++-orange" alt="Arduino C++">
+  <img src="https://img.shields.io/badge/Robot-Autonomous%20Vehicle-purple" alt="Autonomous Vehicle">
+</p>
 
 ---
 
-# 2. Robot Overview
+<p align="center">
+  Engineering documentation and source code for <b>The Good Boys</b> WRO Future Engineers self-driving robot using Matrix Mini R4, Arduino C++, servo steering, rear-wheel drive, laser sensing, AI camera recognition, and color line detection.
+</p>
+
+---
+
+## Table of Contents
+
+- [Team Information](#team-information)
+- [Robot Overview](#robot-overview)
+- [Mechanical Design](#mechanical-design)
+  - [Rear-Wheel Drive System](#rear-wheel-drive-system)
+  - [Front Steering System](#front-steering-system)
+  - [Chassis and Structure](#chassis-and-structure)
+- [Electrical System](#electrical-system)
+- [Sensor System](#sensor-system)
+  - [Color Sensor](#color-sensor)
+  - [Laser Distance Sensor](#laser-distance-sensor)
+  - [AI Camera](#ai-camera)
+- [Software Overview](#software-overview)
+- [Open Challenge Strategy](#open-challenge-strategy)
+- [Obstacle Challenge Strategy](#obstacle-challenge-strategy)
+
+---
+
+## Team Information
+
+| Item | Details |
+|---|---|
+| Team Name | The Good Boys |
+| Competition Category | WRO Future Engineers |
+| Robot Type | Autonomous self-driving vehicle |
+| Controller | Matrix Mini R4 |
+| Programming Language | Arduino C++ |
+
+<p align="center">
+  <img width="700" alt="Team image" src="https://github.com/user-attachments/assets/daa82aaf-4b5f-44bb-97ae-74dda7e2682d">
+</p>
+
+<p align="center">
+  <i>The Good Boys team documentation for the WRO Future Engineers challenge.</i>
+</p>
+
+---
+
+## Robot Overview
 
 Our robot uses a rear-wheel drive system and a front steering system. The rear axle is powered by one motor, which drives the robot forward. The rear axle is supported with bearings to reduce friction and keep the wheels aligned while moving.
 
@@ -46,23 +77,42 @@ The robot uses multiple sensors to understand the field:
 
 The robot is programmed using Arduino C++ through the Matrix Mini R4 system.
 
-<img width="1600" height="1200" alt="image" src="https://github.com/user-attachments/assets/bbf78ad0-5eea-48f8-979c-6dfe739cef8e" />
+<p align="center">
+  <img width="700" alt="Robot overview" src="https://github.com/user-attachments/assets/bbf78ad0-5eea-48f8-979c-6dfe739cef8e">
+</p>
+
+<p align="center">
+  <i>Overall robot structure showing the main vehicle layout.</i>
+</p>
 
 ---
 
-# 3. Mechanical Design
+## Mechanical Design
 
 The mechanical design is based on a simple and stable four-wheel vehicle structure. The robot has two main movement systems:
 
-## 3.1 Rear-Wheel Drive System
+- Rear-wheel drive system
+- Front servo steering system
+
+---
+
+### Rear-Wheel Drive System
 
 The robot uses one motor connected to the rear axle. The motor transfers motion to the rear axle, allowing the rear wheels to push the robot forward. This design was chosen because it keeps the driving system simple and direct.
 
 The rear axle is supported with a single axle and one connector. The purpose of the connector is to reduce friction, improve smooth rotation, and keep the axle stable during movement.
 
-<img width="1600" height="1200" alt="image" src="https://github.com/user-attachments/assets/546b2a87-f985-4b3c-9d84-46c32da37d73" />
+<p align="center">
+  <img width="700" alt="Rear wheel drive system" src="https://github.com/user-attachments/assets/546b2a87-f985-4b3c-9d84-46c32da37d73">
+</p>
 
-## 3.2 Front Steering System
+<p align="center">
+  <i>Rear-wheel drive system powered by one motor connected to the rear axle.</i>
+</p>
+
+---
+
+### Front Steering System
 
 The steering system uses a servo motor connected to a front axle. The front axle holds two wheels. Each wheel is attached with its own bearing, which helps the wheels rotate smoothly while the servo changes the steering angle.
 
@@ -70,43 +120,70 @@ The servo motor controls the turning direction of the robot by rotating the fron
 
 This design was chosen because the WRO Future Engineers challenge requires controlled movement around the track, and a servo-based steering system gives the robot more precise turning control.
 
-<img width="1600" height="1200" alt="image" src="https://github.com/user-attachments/assets/a85ea278-1a16-4228-a25c-5eeb42d99e47" />
+<p align="center">
+  <img width="700" alt="Front steering system" src="https://github.com/user-attachments/assets/a85ea278-1a16-4228-a25c-5eeb42d99e47">
+</p>
 
-## 3.3 Chassis and Structure
+<p align="center">
+  <i>Servo-based front steering system for controlled turning.</i>
+</p>
+
+---
+
+### Chassis and Structure
 
 The robot is built using the Matrix kit structure. The chassis holds the controller, motor, servo, sensors, and wiring in fixed positions. The structure is designed to keep the robot stable while still allowing access to the main components for testing and repair.
 
-<img width="1600" height="1200" alt="image" src="https://github.com/user-attachments/assets/64adda7d-c5f5-48fe-b17e-8e7950c5d3d0" />
-<img width="1600" height="1200" alt="image" src="https://github.com/user-attachments/assets/b2b25e62-6910-4756-a674-4987ddfc27f3" />
+<table>
+  <tr>
+    <td align="center">
+      <img width="350" alt="Chassis view 1" src="https://github.com/user-attachments/assets/64adda7d-c5f5-48fe-b17e-8e7950c5d3d0"><br>
+      <sub>Chassis structure view</sub>
+    </td>
+    <td align="center">
+      <img width="350" alt="Chassis view 2" src="https://github.com/user-attachments/assets/b2b25e62-6910-4756-a674-4987ddfc27f3"><br>
+      <sub>Component placement view</sub>
+    </td>
+  </tr>
+</table>
 
 ---
 
-# 4. Electrical System
+## Electrical System
 
 The robot uses the Matrix Mini R4 controller with Arduino C++ code. The controller receives input from the sensors and sends output commands to the motor and servo.
 
-The main electrical components are:
+### Main Electrical Components
 
-- Matrix Mini R4 controller
-- Rear drive motor
-- Servo motor for steering
-- Bottom color sensor
-- Laser distance sensor
-- AI camera
-- Battery or power source
+| Component | Function |
+|---|---|
+| Matrix Mini R4 Controller | Reads sensor values and controls outputs |
+| Rear Drive Motor | Moves the robot forward |
+| Servo Motor | Controls the steering direction |
+| Bottom Color Sensor | Detects colored lines on the field |
+| Laser Distance Sensor | Measures distance from objects or walls |
+| AI Camera | Detects and recognizes obstacles |
+| Battery / Power Source | Supplies power to the system |
 
 The controller is responsible for reading sensor values, processing the robot’s position, deciding the next movement, and controlling the motor and servo.
 
-<img width="1200" height="1600" alt="image" src="https://github.com/user-attachments/assets/d298f63c-c7eb-4c20-8f56-bc7d9d0c66f9" />
+<p align="center">
+  <img width="600" alt="Electrical system" src="https://github.com/user-attachments/assets/d298f63c-c7eb-4c20-8f56-bc7d9d0c66f9">
+</p>
 
+<p align="center">
+  <i>Electrical layout showing the controller and connected components.</i>
+</p>
 
 ---
 
-# 5. Sensor System
+## Sensor System
 
 The robot uses three main sensors: the color sensor, the laser sensor, and the AI camera.
 
-## 5.1 Color Sensor
+---
+
+### Color Sensor
 
 The color sensor is placed on the bottom of the robot. Its main job is to detect colored lines on the field.
 
@@ -114,27 +191,37 @@ In the open challenge, the robot uses the color sensor to detect orange and blue
 
 This is important because the robot cannot simply drive for a fixed amount of time. A timer would become inaccurate if the battery level changes, if the robot slips, or if the robot turns differently. Counting lines gives the robot a better way to track its progress around the field.
 
-[ADD PHOTO OF BOTTOM COLOR SENSOR HERE]
+<p align="center">
+  <b>Image needed:</b> Bottom color sensor placement
+</p>
 
-## 5.2 Laser Distance Sensor
+---
+
+### Laser Distance Sensor
 
 The laser distance sensor is used to measure distance from objects or walls. This helps the robot understand how close it is to obstacles or boundaries.
 
 The sensor can be used to help the robot avoid collisions, correct its path, or decide when to turn.
 
-[ADD PHOTO OF LASER SENSOR HERE]
+<p align="center">
+  <b>Image needed:</b> Laser distance sensor placement
+</p>
 
-## 5.3 AI Camera
+---
+
+### AI Camera
 
 The AI camera is used for object recognition and obstacle detection. It helps the robot identify objects during the obstacle challenge and adjust its movement based on what it sees.
 
 The AI camera adds another layer of sensing beyond simple line and distance detection. This is useful because the obstacle challenge requires the robot to react to objects in the field rather than only following a fixed route.
 
-[ADD PHOTO OF AI CAMERA HERE]
+<p align="center">
+  <b>Image needed:</b> AI camera placement
+</p>
 
 ---
 
-# 6. Software Overview
+## Software Overview
 
 The robot is programmed in Arduino C++ using the Matrix Mini R4 system.
 
@@ -151,14 +238,18 @@ The software controls:
 
 The program is divided into two main challenge modes:
 
-1. Open Challenge Code  
-2. Obstacle Challenge Code  
+| Challenge Mode | Purpose |
+|---|---|
+| Open Challenge Code | Drives around the field using line detection and counting |
+| Obstacle Challenge Code | Uses sensors and camera input to react to obstacles |
 
-[ADD SCREENSHOT OF CODE FILE STRUCTURE HERE]
+<p align="center">
+  <b>Image needed:</b> Screenshot of code file structure
+</p>
 
 ---
 
-# 7. Open Challenge Strategy
+## Open Challenge Strategy
 
 In the open challenge, the robot must drive autonomously around the field without obstacles.
 
@@ -166,8 +257,9 @@ Our open challenge strategy is based on detecting the orange and blue lines on t
 
 Each time the robot detects an orange or blue line, the code updates a variable. This variable stores how many lines the robot has passed. The robot uses this count to estimate its progress around the field and decide when it should stop.
 
-The basic open challenge logic is:
+### Open Challenge Logic
 
+```text
 1. Start the robot.
 2. Drive forward using the rear motor.
 3. Use the servo to steer and stay on the correct path.
@@ -175,30 +267,3 @@ The basic open challenge logic is:
 5. Increase the line count whenever a valid line is detected.
 6. Continue driving until the target number of lines is reached.
 7. Stop the robot.
-
-This method is stronger than only using time because line counting is based on the actual field position. If the robot moves slightly faster or slower, the line count still gives it a way to know where it is.
-
----
-
-# 8. Obstacle Challenge Strategy
-
-In the obstacle challenge, the robot must move around the field while reacting to obstacles.
-
-The obstacle challenge uses the same basic driving system as the open challenge, but it also relies more on the laser distance sensor and AI camera.
-
-The laser sensor helps the robot measure distance from objects or walls. The AI camera helps the robot identify obstacles and make decisions based on what appears in front of it.
-
-The basic obstacle challenge logic is:
-
-1. Start the robot.
-2. Drive forward using the rear motor.
-3. Use the servo motor to steer.
-4. Use the color sensor to track colored lines when needed.
-5. Use the laser sensor to detect nearby objects or walls.
-6. Use the AI camera to identify obstacles.
-7. Adjust steering and movement based on sensor readings.
-8. Avoid obstacles and continue around the field.
-9. Stop after completing the required task.
-
----
-
