@@ -38,8 +38,10 @@
   - [Laser Distance Sensor](#laser-distance-sensor)
   - [AI Camera](#ai-camera)
 - [Software Overview](#software-overview)
+- [Code Files](#code-files)
 - [Open Challenge Strategy](#open-challenge-strategy)
 - [Obstacle Challenge Strategy](#obstacle-challenge-strategy)
+- [Robot Gallery](#robot-gallery)
 
 ---
 
@@ -191,10 +193,6 @@ In the open challenge, the robot uses the color sensor to detect orange and blue
 
 This is important because the robot cannot simply drive for a fixed amount of time. A timer would become inaccurate if the battery level changes, if the robot slips, or if the robot turns differently. Counting lines gives the robot a better way to track its progress around the field.
 
-<p align="center">
-  <b>Image needed:</b> Bottom color sensor placement
-</p>
-
 ---
 
 ### Laser Distance Sensor
@@ -203,10 +201,6 @@ The laser distance sensor is used to measure distance from objects or walls. Thi
 
 The sensor can be used to help the robot avoid collisions, correct its path, or decide when to turn.
 
-<p align="center">
-  <b>Image needed:</b> Laser distance sensor placement
-</p>
-
 ---
 
 ### AI Camera
@@ -214,10 +208,6 @@ The sensor can be used to help the robot avoid collisions, correct its path, or 
 The AI camera is used for object recognition and obstacle detection. It helps the robot identify objects during the obstacle challenge and adjust its movement based on what it sees.
 
 The AI camera adds another layer of sensing beyond simple line and distance detection. This is useful because the obstacle challenge requires the robot to react to objects in the field rather than only following a fixed route.
-
-<p align="center">
-  <b>Image needed:</b> AI camera placement
-</p>
 
 ---
 
@@ -240,12 +230,21 @@ The program is divided into two main challenge modes:
 
 | Challenge Mode | Purpose |
 |---|---|
-| Open Challenge Code | Drives around the field using line detection and counting |
+| Open Challenge Code | Drives around the field using line detection and line counting |
 | Obstacle Challenge Code | Uses sensors and camera input to react to obstacles |
 
-<p align="center">
-  <b>Image needed:</b> Screenshot of code file structure
-</p>
+---
+
+## Code Files
+
+The robot code is organized by challenge type. Each section contains the Arduino C++ code used for that specific WRO Future Engineers challenge.
+
+| Code Section | Purpose | Link |
+|---|---|---|
+| Open Challenge Code | Controls autonomous driving using line detection and line counting | [View Open Challenge Code](./Open%20Challenge%20Code) |
+| Obstacle Challenge Code | Controls obstacle navigation using distance sensing and camera input | [View Obstacle Challenge Code](./Obstacle%20Challenge%20Code) |
+
+> If the links do not open, rename the folders or update the links so they match the exact file or folder names in the repository.
 
 ---
 
