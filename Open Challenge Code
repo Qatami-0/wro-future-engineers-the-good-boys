@@ -2,11 +2,13 @@
 
 #define MOTOR_SPEED 30
 #define TURN_SPEED 35
+
 #define SERVO_CENTER 83
 #define SERVO_RIGHT 55
 #define SERVO_LEFT 105
 
 #define TURN_TIME 3500
+#define BLUE_TURN_TIME 4200
 #define WALL_TIME 1750
 
 #define REVERSE_SPEED -20
@@ -21,16 +23,17 @@
 
 int direction = 0;
 int lineCount = 0;
+
 bool onLine = false;
 bool finished = false;
-
 bool waitingToStop = false;
-unsigned long finishTime = 0;
 
-unsigned long startTime;
+unsigned long finishTime = 0;
+unsigned long startTime = 0;
 
 void setup() {
   Serial.begin(115200);
+
   MiniR4.begin();
   MiniR4.PWR.setBattCell(2);
 
@@ -46,25 +49,23 @@ void setup() {
 
 void loop() {
   int frontDist = MiniR4.I2C2.MXLaserV2.getDistance();
-  int leftDist  = MiniR4.I2C3.MXLaserV2.getDistance();
+  int leftDist = MiniR4.I2C3.MXLaserV2.getDistance();
 
   uint16_t r = MiniR4.I2C4.MXColorV3.getRaw_R();
   uint16_t g = MiniR4.I2C4.MXColorV3.getRaw_G();
   uint16_t b = MiniR4.I2C4.MXColorV3.getRaw_B();
 
-  // WHITE
-  bool isWhite = (g > 150 && r > 110 && b > 130);
+  // Color detection
+  bool isWhite = (r > 120 && g > 120 && b > 120);
 
-  // ORANGE
   bool isOrangeReal =
     !isWhite &&
-    (r > 30 && r < 210) &&
-    (g > 50 && g < 100) &&
-    (b > 0 && b < 80) &&
-    (r > g) &&
-    (g > b);
+    (r > 80) &&
+    (g > 60) &&
+    (b > 30 && b < 100) &&
+    (r > g * 1.15) &&
+    (g > b * 1.1);
 
-  // BLUE (fixed)
   bool isBlueReal =
     !isWhite &&
     (r < 60) &&
@@ -72,21 +73,26 @@ void loop() {
     (b > 50 && b < 250) &&
     (b > g);
 
+  // Stop permanently after finishing
   if (finished) {
     MiniR4.M1.setSpeed(0);
     MiniR4.RC1.setAngle(SERVO_CENTER);
     return;
   }
 
-  // Direction decision
+  // Decide driving direction based on first valid colored line
   if (millis() - startTime > 2000 && !isWhite) {
     if (direction == 0) {
-      if (isOrangeReal) direction = 1;
-      else if (isBlueReal) direction = -1;
+      if (isOrangeReal) {
+        direction = 1;
+      }
+      else if (isBlueReal) {
+        direction = -1;
+      }
     }
   }
 
-  // Line detection
+  // Count only the correct line color based on driving direction
   bool correctLine =
     !isWhite &&
     ((direction == 1 && isOrangeReal) ||
@@ -109,7 +115,7 @@ void loop() {
     onLine = false;
   }
 
-  // Delayed stop
+  // Stop after completing the required number of lines
   if (waitingToStop) {
     if (millis() - finishTime >= STOP_DELAY) {
       MiniR4.M1.setSpeed(0);
@@ -119,19 +125,28 @@ void loop() {
     }
   }
 
-  // COLOR TURN
+  // Orange line turn
   if (direction == 1 && isOrangeReal) {
     MiniR4.RC1.setAngle(SERVO_RIGHT);
     MiniR4.M1.setSpeed(TURN_SPEED);
     delay(TURN_TIME);
   }
+
+  // Blue line turn
   else if (direction == -1 && isBlueReal) {
+    MiniR4.M1.setSpeed(0);
+    delay(150);
+
     MiniR4.RC1.setAngle(SERVO_LEFT);
+    delay(400);
+
     MiniR4.M1.setSpeed(TURN_SPEED);
-    delay(TURN_TIME);
+    delay(BLUE_TURN_TIME);
+
+    MiniR4.RC1.setAngle(SERVO_CENTER);
   }
 
-  // FRONT WALL
+  // Front wall avoidance
   if (frontDist > 0 && frontDist < 400) {
     MiniR4.M1.setSpeed(0);
     delay(200);
@@ -142,7 +157,8 @@ void loop() {
 
     if (direction == 1) {
       MiniR4.RC1.setAngle(SERVO_RIGHT);
-    } else {
+    }
+    else {
       MiniR4.RC1.setAngle(SERVO_LEFT);
     }
 
@@ -151,40 +167,31 @@ void loop() {
     return;
   }
 
- // SMART WALL STABILIZATION (WITH LIMIT)
-if (leftDist > 0) {
-
-  if (direction == 1) { // CLOCKWISE
-
-    if (leftDist < LEFT_CLOSE) {
-      MiniR4.RC1.setAngle(SERVO_RIGHT);
-      MiniR4.M1.setSpeed(MOTOR_SPEED);
-      delay(STABILIZE_TIME);
+  // Wall stabilization
+  if (leftDist > 0) {
+    if (direction == 1) {
+      if (leftDist < LEFT_CLOSE) {
+        MiniR4.RC1.setAngle(SERVO_RIGHT);
+        delay(STABILIZE_TIME);
+      }
+      else if (leftDist > LEFT_FAR) {
+        MiniR4.RC1.setAngle(SERVO_LEFT);
+        delay(STABILIZE_TIME);
+      }
     }
-    else if (leftDist > LEFT_FAR ) {
-      MiniR4.RC1.setAngle(SERVO_LEFT);
-      MiniR4.M1.setSpeed(MOTOR_SPEED);
-      delay(STABILIZE_TIME);
+    else if (direction == -1) {
+      if (leftDist < LEFT_CLOSE || leftDist > 900) {
+        MiniR4.RC1.setAngle(SERVO_RIGHT);
+        delay(STABILIZE_TIME);
+      }
+      else if (leftDist > LEFT_FAR && leftDist < 750) {
+        MiniR4.RC1.setAngle(SERVO_LEFT);
+        delay(STABILIZE_TIME);
+      }
     }
-
-  } 
-  else if (direction == -1) { // COUNTERCLOCKWISE
-
-    if (leftDist < LEFT_CLOSE || leftDist > 900) {
-      MiniR4.RC1.setAngle(SERVO_RIGHT);
-      MiniR4.M1.setSpeed(MOTOR_SPEED);
-      delay(STABILIZE_TIME);
-    }
-    else if (leftDist > LEFT_FAR && leftDist < 750) {
-      MiniR4.RC1.setAngle(SERVO_LEFT);
-      MiniR4.M1.setSpeed(MOTOR_SPEED);
-      delay(STABILIZE_TIME);
-    }
-
   }
-}
 
-  // NORMAL DRIVE
+  // Normal driving
   MiniR4.RC1.setAngle(SERVO_CENTER);
   MiniR4.M1.setSpeed(MOTOR_SPEED);
 
