@@ -22,23 +22,23 @@
 
 String camColor = "NONE";
 
-// camera tracking
+// Camera tracking
 String activeColor = "NONE";
 unsigned long lastSeenTime = 0;
 
-// block lock
+// Block tracking
 bool chasingBlock = false;
 unsigned long lastBlockTime = 0;
 
 int direction = 0;
 int lineCount = 0;
+
 bool onLine = false;
 bool finished = false;
-
 bool waitingToStop = false;
-unsigned long finishTime = 0;
 
-unsigned long startTime;
+unsigned long finishTime = 0;
+unsigned long startTime = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -47,9 +47,9 @@ void setup() {
   MiniR4.begin();
   MiniR4.PWR.setBattCell(2);
 
-  MiniR4.I2C2.MXLaserV2.begin(); // front
-  MiniR4.I2C3.MXLaserV2.begin(); // left laser (NOW USED)
-  MiniR4.I2C4.MXColorV3.begin();
+  MiniR4.I2C2.MXLaserV2.begin();  // Front laser sensor
+  MiniR4.I2C3.MXLaserV2.begin();  // Left laser sensor
+  MiniR4.I2C4.MXColorV3.begin();  // Bottom color sensor
 
   MiniR4.RC1.setAngle(SERVO_CENTER);
   MiniR4.M1.setSpeed(MOTOR_SPEED);
@@ -58,24 +58,24 @@ void setup() {
 }
 
 void loop() {
-
   int frontDist = MiniR4.I2C2.MXLaserV2.getDistance();
-  int leftDist  = MiniR4.I2C3.MXLaserV2.getDistance(); // 
+  int leftDist = MiniR4.I2C3.MXLaserV2.getDistance();
 
   uint16_t r = MiniR4.I2C4.MXColorV3.getRaw_R();
   uint16_t g = MiniR4.I2C4.MXColorV3.getRaw_G();
   uint16_t b = MiniR4.I2C4.MXColorV3.getRaw_B();
 
-  // CAMERA INPUT
+  // Camera input
   if (Serial1.available()) {
     camColor = Serial1.readStringUntil('\n');
     camColor.trim();
   }
 
-  // block tracking
+  // Track detected red or green blocks
   if (camColor == "RED" || camColor == "GREEN") {
     activeColor = camColor;
     lastSeenTime = millis();
+
     chasingBlock = true;
     lastBlockTime = millis();
   }
@@ -88,7 +88,7 @@ void loop() {
     chasingBlock = false;
   }
 
-  // COLOR DETECTION
+  // Color detection
   bool isWhite = (g > 150 && r > 110 && b > 130);
 
   bool isOrangeReal =
@@ -106,21 +106,26 @@ void loop() {
     (b > 50 && b < 250) &&
     (b > g);
 
+  // Stop permanently after finishing
   if (finished) {
     MiniR4.M1.setSpeed(0);
     MiniR4.RC1.setAngle(SERVO_CENTER);
     return;
   }
 
-  // Direction
+  // Decide driving direction based on first valid colored line
   if (millis() - startTime > 2000 && !isWhite) {
     if (direction == 0) {
-      if (isOrangeReal) direction = 1;
-      else if (isBlueReal) direction = -1;
+      if (isOrangeReal) {
+        direction = 1;
+      }
+      else if (isBlueReal) {
+        direction = -1;
+      }
     }
   }
 
-  // Line count
+  // Count only the correct line color based on driving direction
   bool correctLine =
     !isWhite &&
     ((direction == 1 && isOrangeReal) ||
@@ -136,9 +141,11 @@ void loop() {
     }
   }
 
-  if (!correctLine) onLine = false;
+  if (!correctLine) {
+    onLine = false;
+  }
 
-  // Stop
+  // Stop after completing the required number of lines
   if (waitingToStop) {
     if (millis() - finishTime >= STOP_DELAY) {
       MiniR4.M1.setSpeed(0);
@@ -148,13 +155,15 @@ void loop() {
     }
   }
 
-  // Color turns
+  // Orange line turn
   if (direction == 1 && isOrangeReal) {
     MiniR4.RC1.setAngle(SERVO_RIGHT);
     MiniR4.M1.setSpeed(TURN_SPEED);
     delay(TURN_TIME);
     return;
   }
+
+  // Blue line turn
   else if (direction == -1 && isBlueReal) {
     MiniR4.RC1.setAngle(SERVO_LEFT);
     MiniR4.M1.setSpeed(TURN_SPEED);
@@ -162,9 +171,8 @@ void loop() {
     return;
   }
 
-  // Front obstacle (ignore blocks)
+  // Front obstacle avoidance
   if (frontDist > 0 && frontDist < 400 && !chasingBlock) {
-
     MiniR4.M1.setSpeed(0);
     delay(150);
 
@@ -172,17 +180,20 @@ void loop() {
     MiniR4.RC1.setAngle(SERVO_CENTER);
     delay(REVERSE_TIME);
 
-    if (direction == 1) MiniR4.RC1.setAngle(SERVO_RIGHT);
-    else MiniR4.RC1.setAngle(SERVO_LEFT);
+    if (direction == 1) {
+      MiniR4.RC1.setAngle(SERVO_RIGHT);
+    }
+    else {
+      MiniR4.RC1.setAngle(SERVO_LEFT);
+    }
 
     MiniR4.M1.setSpeed(TURN_SPEED);
     delay(WALL_TIME);
     return;
   }
 
-  // SOFT STABILIZATION (ONLY WHEN NO BLOCK)
+  // Soft wall stabilization when no block is being tracked
   if (!chasingBlock && leftDist > 0) {
-
     if (leftDist < 350) {
       MiniR4.RC1.setAngle(SERVO_RIGHT);
       MiniR4.M1.setSpeed(MOTOR_SPEED);
@@ -210,4 +221,4 @@ void loop() {
   }
 
   delay(50);
-}\
+}
