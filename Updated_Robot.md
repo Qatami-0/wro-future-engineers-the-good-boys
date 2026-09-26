@@ -521,3 +521,5 @@ For the final documentation, this section will contain photographs of the robot 
   <b>The Good Boys — WRO Future Engineers 2026</b><br>
   <i>We started with an RC car, kept the mechanical parts that already worked, and rebuilt the control system around autonomous sensing and code.</i>
 </p>
+
+Note: Due to regional security disruptions and restricted access to our testing facilities during the final preparation period, we were unable to complete and record the required autonomous driving videos before the documentation deadline. The robot hardware and planned control architecture are documented in this repository, but full-field validation remains incomplete.
