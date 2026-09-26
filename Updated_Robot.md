@@ -517,6 +517,14 @@ For the final documentation, this section will contain photographs of the robot 
 
 ---
 
+# Calculations & Notes
+
+<img width="466" height="370" alt="Screenshot 2026-09-25 at 5 44 38 PM" src="https://github.com/user-attachments/assets/c90542f3-cd80-4ece-b51c-9517b8af5c5e" />
+<img width="463" height="371" alt="Screenshot 2026-09-25 at 5 44 44 PM" src="https://github.com/user-attachments/assets/0456da34-bf28-4ff3-aead-60d3fad93616" />
+<img width="470" height="329" alt="Screenshot 2026-09-25 at 5 44 53 PM" src="https://github.com/user-attachments/assets/206e776e-2ebb-400b-ae97-bebd291d6426" />
+<img width="460" height="326" alt="Screenshot 2026-09-25 at 5 44 59 PM" src="https://github.com/user-attachments/assets/d6a94560-00a3-45c4-8757-59017ff53568" />
+
+
 <p align="center">
   <b>The Good Boys — WRO Future Engineers 2026</b><br>
   <i>We started with an RC car, kept the mechanical parts that already worked, and rebuilt the control system around autonomous sensing and code.</i>
