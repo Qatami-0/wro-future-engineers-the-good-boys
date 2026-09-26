@@ -1,0 +1,504 @@
+#include <Arduino.h>
+#include <SPI.h>
+#include <Pixy2.h>
+#include <Servo.h>
+
+// =====================================
+// HARDWARE
+// =====================================
+
+const byte DIR_PIN = 4;
+const byte PWM_PIN = 5;
+
+const byte TRIG_PIN = 6;
+const byte ECHO_PIN = 7;
+
+const byte SERVO_PIN = 9;
+
+Pixy2 pixy;
+Servo steering;
+
+// Pixy2 color signatures
+const byte RED_SIG = 1;
+const byte GREEN_SIG = 2;
+
+// =====================================
+// DRIVING SETTINGS
+// =====================================
+
+const int MOTOR_SPEED = 65;
+const int TURN_SPEED = 75;
+const int CAMERA_SPEED = 55;
+const int REVERSE_SPEED = 75;
+
+// Confirm these angles on your car
+const int CENTER = 90;
+const int RIGHT = 135;
+const int LEFT = 45;
+
+// Set to 1 for right-hand corners.
+// Set to -1 for left-hand corners.
+const int COURSE_DIRECTION = 1;
+
+// Distances in centimeters
+const float WALL_DISTANCE = 30;
+const float CLEAR_DISTANCE = 35;
+const float EMERGENCY_DISTANCE = 15;
+
+// Timings in milliseconds
+const unsigned long REVERSE_TIME = 450;
+const unsigned long TURN_MIN_TIME = 850;
+const unsigned long TURN_MAX_TIME = 1800;
+const unsigned long SERVO_SETTLE = 220;
+
+const unsigned long BLOCK_MEMORY = 500;
+
+// A front sensor cannot see behind the car.
+// Limit repeated blind reverses.
+const byte MAX_BLIND_REVERSES = 3;
+
+// =====================================
+// ROBOT STATES
+// =====================================
+
+enum RobotState {
+  DRIVING,
+  REVERSING,
+  TURNING,
+  SAFETY_STOP
+};
+
+RobotState state = DRIVING;
+
+unsigned long stateStart = 0;
+unsigned long blockLastSeen = 0;
+
+byte reverseAttempts = 0;
+byte clearReadings = 0;
+byte sensorFailures = 0;
+
+int activeColor = 0;
+int blockX = 158;
+int blockWidth = 0;
+int turnDirection = 1;
+
+bool cameraReady = false;
+
+// =====================================
+// MOTOR CONTROL
+// =====================================
+
+void stopMotor() {
+  analogWrite(PWM_PIN, 0);
+}
+
+void motorForward(int speed) {
+  digitalWrite(DIR_PIN, HIGH);
+  analogWrite(PWM_PIN, speed);
+}
+
+void motorReverse(int speed) {
+  digitalWrite(DIR_PIN, LOW);
+  analogWrite(PWM_PIN, speed);
+}
+
+// =====================================
+// STEERING
+// =====================================
+
+void steer(int angle) {
+  steering.write(
+    constrain(angle, LEFT, RIGHT)
+  );
+}
+
+void steerForDirection(int direction) {
+  if (direction == 1) {
+    steer(RIGHT);
+  } else {
+    steer(LEFT);
+  }
+}
+
+// =====================================
+// ULTRASONIC SENSOR
+// =====================================
+
+float getDistance() {
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(5);
+
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+
+  unsigned long duration =
+    pulseIn(ECHO_PIN, HIGH, 25000UL);
+
+  if (duration == 0) {
+    return -1;
+  }
+
+  return duration * 0.0343 / 2.0;
+}
+
+// =====================================
+// PIXY2 CAMERA
+// =====================================
+
+void updateCamera() {
+  if (!cameraReady) {
+    activeColor = 0;
+    return;
+  }
+
+  int8_t count = pixy.ccc.getBlocks(
+    false,
+    CCC_SIG1 | CCC_SIG2,
+    10
+  );
+
+  if (count > 0) {
+    int bestArea = 0;
+    int bestIndex = -1;
+
+    for (int i = 0; i < count; i++) {
+      auto &b = pixy.ccc.blocks[i];
+
+      if (b.m_signature != RED_SIG &&
+          b.m_signature != GREEN_SIG) {
+        continue;
+      }
+
+      int area = b.m_width * b.m_height;
+
+      if (area > bestArea &&
+          b.m_width >= 12) {
+        bestArea = area;
+        bestIndex = i;
+      }
+    }
+
+    if (bestIndex >= 0) {
+      auto &b = pixy.ccc.blocks[bestIndex];
+
+      activeColor = b.m_signature;
+      blockX = b.m_x;
+      blockWidth = b.m_width;
+
+      blockLastSeen = millis();
+    }
+  }
+
+  // Briefly remember the last object
+  if (millis() - blockLastSeen >
+      BLOCK_MEMORY) {
+    activeColor = 0;
+    blockWidth = 0;
+  }
+}
+
+// =====================================
+// CAMERA-GUIDED STEERING
+// =====================================
+
+void followCamera() {
+  if (activeColor == 0) {
+    steer(CENTER);
+    motorForward(MOTOR_SPEED);
+    return;
+  }
+
+  // Red: pass on the right.
+  // Keep the red pillar to our left.
+  //
+  // Green: pass on the left.
+  // Keep the green pillar to our right.
+
+  int targetX;
+
+  if (activeColor == RED_SIG) {
+    targetX = 95;
+  } else {
+    targetX = 220;
+  }
+
+  int error = blockX - targetX;
+
+  // Positive error steers right.
+  int correction = error * 0.4;
+
+  int angle = constrain(
+    CENTER + correction,
+    LEFT,
+    RIGHT
+  );
+
+  steer(angle);
+  motorForward(CAMERA_SPEED);
+
+  if (activeColor == RED_SIG) {
+    Serial.println("RED - PASS RIGHT");
+  } else {
+    Serial.println("GREEN - PASS LEFT");
+  }
+}
+
+// =====================================
+// STATE TRANSITIONS
+// =====================================
+
+void startReverse(int direction) {
+  stopMotor();
+
+  turnDirection = direction;
+
+  if (reverseAttempts >=
+      MAX_BLIND_REVERSES) {
+    state = SAFETY_STOP;
+    Serial.println("REAR SAFETY LIMIT");
+    return;
+  }
+
+  reverseAttempts++;
+
+  state = REVERSING;
+  stateStart = millis();
+
+  // Reverse with steering opposite
+  // to the intended forward turn.
+  steerForDirection(-turnDirection);
+
+  Serial.println("STARTING REVERSE");
+}
+
+void startForwardTurn() {
+  stopMotor();
+
+  state = TURNING;
+  stateStart = millis();
+  clearReadings = 0;
+
+  steerForDirection(turnDirection);
+
+  Serial.println("STARTING FORWARD TURN");
+}
+
+void resumeStraight() {
+  stopMotor();
+
+  steer(CENTER);
+
+  state = DRIVING;
+  clearReadings = 0;
+  reverseAttempts = 0;
+
+  Serial.println("PATH CLEAR - FORWARD");
+}
+
+// =====================================
+// SENSOR ERROR HANDLING
+// =====================================
+
+bool sensorValid(float distance) {
+  if (distance < 0) {
+    sensorFailures++;
+
+    if (sensorFailures >= 2) {
+      stopMotor();
+      state = SAFETY_STOP;
+
+      Serial.println(
+        "ULTRASONIC SENSOR ERROR"
+      );
+    }
+
+    return false;
+  }
+
+  sensorFailures = 0;
+  return true;
+}
+
+// =====================================
+// SETUP
+// =====================================
+
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(DIR_PIN, OUTPUT);
+  pinMode(PWM_PIN, OUTPUT);
+
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
+  digitalWrite(TRIG_PIN, LOW);
+
+  stopMotor();
+
+  steering.attach(SERVO_PIN);
+  steer(CENTER);
+
+  Serial.println("STARTING PIXY2");
+
+  int8_t result = pixy.init();
+
+  cameraReady = (result >= 0);
+
+  if (cameraReady) {
+    pixy.changeProg("color_connected_components");
+    Serial.println("PIXY2 READY");
+  } else {
+    Serial.println("PIXY2 NOT CONNECTED");
+    state = SAFETY_STOP;
+  }
+
+  delay(2000);
+
+  Serial.println("WRO ROBOT READY");
+}
+
+// =====================================
+// MAIN LOOP
+// =====================================
+
+void loop() {
+  if (state == SAFETY_STOP) {
+    stopMotor();
+    delay(100);
+    return;
+  }
+
+  updateCamera();
+
+  float distance = getDistance();
+
+  Serial.print("Distance: ");
+  Serial.print(distance);
+  Serial.println(" cm");
+
+  if (!sensorValid(distance)) {
+    stopMotor();
+    delay(50);
+    return;
+  }
+
+  // =================================
+  // STATE 1: NORMAL DRIVING
+  // =================================
+
+  if (state == DRIVING) {
+
+    // Emergency obstacle avoidance
+    if (distance <= EMERGENCY_DISTANCE) {
+
+      int direction = COURSE_DIRECTION;
+
+      if (activeColor == RED_SIG) {
+        direction = 1;
+      }
+
+      if (activeColor == GREEN_SIG) {
+        direction = -1;
+      }
+
+      startReverse(direction);
+      return;
+    }
+
+    // Wall detected, with no colored
+    // traffic sign being tracked
+    if (distance <= WALL_DISTANCE &&
+        activeColor == 0) {
+
+      startReverse(COURSE_DIRECTION);
+      return;
+    }
+
+    // Follow the camera when a
+    // colored obstacle is visible.
+    followCamera();
+
+    delay(50);
+    return;
+  }
+
+  // =================================
+  // STATE 2: REVERSE
+  // =================================
+
+  if (state == REVERSING) {
+
+    unsigned long elapsed =
+      millis() - stateStart;
+
+    if (elapsed < SERVO_SETTLE) {
+      stopMotor();
+      return;
+    }
+
+    if (elapsed <
+        SERVO_SETTLE + REVERSE_TIME) {
+
+      motorReverse(REVERSE_SPEED);
+      return;
+    }
+
+    startForwardTurn();
+    return;
+  }
+
+  // =================================
+  // STATE 3: FORWARD TURN
+  // =================================
+
+  if (state == TURNING) {
+
+    unsigned long elapsed =
+      millis() - stateStart;
+
+    if (elapsed < SERVO_SETTLE) {
+      stopMotor();
+      return;
+    }
+
+    // Never drive into an obstacle
+    // that is dangerously close.
+    if (distance <= EMERGENCY_DISTANCE) {
+      startReverse(turnDirection);
+      return;
+    }
+
+    // Confirm that the front is clear
+    if (distance > CLEAR_DISTANCE) {
+      clearReadings++;
+    } else {
+      clearReadings = 0;
+    }
+
+    // Give the robot enough time to
+    // rotate before straightening.
+    if (elapsed >= TURN_MIN_TIME &&
+        clearReadings >= 3) {
+
+      resumeStraight();
+      motorForward(MOTOR_SPEED);
+      return;
+    }
+
+    // If the wall is still ahead,
+    // attempt another short maneuver.
+    if (elapsed >= TURN_MAX_TIME) {
+      startReverse(turnDirection);
+      return;
+    }
+
+    // Keep moving while turning
+    steerForDirection(turnDirection);
+    motorForward(TURN_SPEED);
+
+    delay(50);
+    return;
+  }
+}
