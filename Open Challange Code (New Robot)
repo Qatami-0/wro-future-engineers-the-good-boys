@@ -1,0 +1,657 @@
+#include <Arduino.h>
+#include <SPI.h>
+#include <Pixy2.h>
+#include <Servo.h>
+
+// ======================================
+// HARDWARE CONNECTIONS
+// ======================================
+
+// Motor driver
+const byte DIR_PIN = 4;
+const byte PWM_PIN = 5;
+
+// Front HC-SR04
+const byte TRIG_PIN = 6;
+const byte ECHO_PIN = 7;
+
+// Steering servo
+const byte SERVO_PIN = 9;
+
+Pixy2 pixy;
+Servo steering;
+
+// ======================================
+// PIXY2 COLOR SIGNATURES
+// ======================================
+
+const byte ORANGE_SIG = 1;
+const byte BLUE_SIG = 2;
+
+// Camera image: 316 x 208
+// Accept lines appearing near the car.
+const int LINE_MIN_Y = 130;
+const int LINE_MIN_WIDTH = 35;
+
+// ======================================
+// MOTOR AND STEERING
+// ======================================
+
+const int MOTOR_SPEED = 65;
+const int TURN_SPEED = 75;
+const int REVERSE_SPEED = 75;
+
+const int CENTER = 90;
+const int RIGHT = 135;
+const int LEFT = 45;
+
+// ======================================
+// DRIVING DIRECTION
+// ======================================
+
+// 0 = Detect from first colored line
+// 1 = Clockwise / right turns
+// -1 = Counterclockwise / left turns
+
+const int START_DIRECTION = 0;
+
+int direction = START_DIRECTION;
+
+// ======================================
+// DISTANCE SETTINGS
+// ======================================
+
+const float WALL_DISTANCE = 30;
+const float CLEAR_DISTANCE = 35;
+const float EMERGENCY_DISTANCE = 12;
+
+// ======================================
+// TURNING SETTINGS
+// ======================================
+
+// These times must be calibrated
+// for your current car.
+
+const unsigned long RIGHT_TURN_TIME = 1400;
+const unsigned long LEFT_TURN_TIME = 1600;
+
+const unsigned long REVERSE_TIME = 450;
+const unsigned long SERVO_SETTLE = 200;
+
+// ======================================
+// LINE COUNTING
+// ======================================
+
+const int TOTAL_LINES = 12;
+
+const unsigned long LINE_COOLDOWN = 1100;
+const unsigned long LINE_RELEASE_TIME = 250;
+
+const unsigned long STOP_DELAY = 3000;
+
+int lineCount = 0;
+
+bool onLine = false;
+bool waitingToStop = false;
+
+unsigned long lastLineTime = 0;
+unsigned long lastLineSeen = 0;
+unsigned long finishTime = 0;
+
+// ======================================
+// ROBOT STATES
+// ======================================
+
+enum RobotState {
+  DRIVING,
+  REVERSING,
+  TURNING,
+  STOPPED
+};
+
+RobotState state = DRIVING;
+
+unsigned long stateStart = 0;
+
+int turnDirection = 1;
+
+bool reversePhaseStarted = false;
+
+byte reverseAttempts = 0;
+const byte MAX_BLIND_REVERSES = 3;
+
+byte sensorErrors = 0;
+byte clearReadings = 0;
+
+// ======================================
+// MOTOR CONTROL
+// ======================================
+
+void stopMotor() {
+  analogWrite(PWM_PIN, 0);
+}
+
+void forward(int speed) {
+  digitalWrite(DIR_PIN, HIGH);
+  analogWrite(PWM_PIN, speed);
+}
+
+void backward(int speed) {
+  digitalWrite(DIR_PIN, LOW);
+  analogWrite(PWM_PIN, speed);
+}
+
+// ======================================
+// STEERING
+// ======================================
+
+void steer(int angle) {
+  steering.write(angle);
+}
+
+void steerDirection(int dir) {
+  if (dir == 1) {
+    steer(RIGHT);
+  }
+  else {
+    steer(LEFT);
+  }
+}
+
+// ======================================
+// FRONT DISTANCE SENSOR
+// ======================================
+
+float getDistance() {
+
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(5);
+
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+
+  unsigned long duration =
+    pulseIn(ECHO_PIN, HIGH, 25000UL);
+
+  if (duration == 0) {
+    return -1;
+  }
+
+  return duration * 0.0343 / 2.0;
+}
+
+// ======================================
+// READ PIXY2 TRACK LINES
+// ======================================
+
+// Returns:
+//  1 = Orange
+// -1 = Blue
+//  0 = No valid line
+
+int readTrackLine() {
+
+  int8_t count = pixy.ccc.getBlocks(
+    false,
+    CCC_SIG1 | CCC_SIG2,
+    10
+  );
+
+  // No new frame or no blocks
+  if (count <= 0) {
+    return 0;
+  }
+
+  int bestArea = 0;
+  int detected = 0;
+
+  for (int i = 0; i < count; i++) {
+
+    auto &block = pixy.ccc.blocks[i];
+
+    // Ignore objects too high
+    // in the camera image.
+    if (block.m_y < LINE_MIN_Y) {
+      continue;
+    }
+
+    // Reject tiny detections.
+    if (block.m_width < LINE_MIN_WIDTH ||
+        block.m_height < 5) {
+      continue;
+    }
+
+    int area =
+      block.m_width * block.m_height;
+
+    if (area > bestArea) {
+
+      if (block.m_signature == ORANGE_SIG) {
+        bestArea = area;
+        detected = 1;
+      }
+
+      else if (block.m_signature == BLUE_SIG) {
+        bestArea = area;
+        detected = -1;
+      }
+    }
+  }
+
+  return detected;
+}
+
+// ======================================
+// STOP THE ROBOT
+// ======================================
+
+void stopRobot() {
+  stopMotor();
+  steer(CENTER);
+
+  state = STOPPED;
+
+  Serial.println("ROBOT STOPPED");
+}
+
+// ======================================
+// START A CORNER TURN
+// ======================================
+
+void startTurn(int dir) {
+
+  stopMotor();
+
+  turnDirection = dir;
+
+  steerDirection(dir);
+
+  state = TURNING;
+  stateStart = millis();
+
+  clearReadings = 0;
+
+  if (dir == 1) {
+    Serial.println("TURNING RIGHT");
+  }
+  else {
+    Serial.println("TURNING LEFT");
+  }
+}
+
+// ======================================
+// START REVERSE-ASSISTED TURN
+// ======================================
+
+void startReverse(int dir) {
+
+  stopMotor();
+
+  if (reverseAttempts >=
+      MAX_BLIND_REVERSES) {
+
+    Serial.println(
+      "REVERSE SAFETY LIMIT"
+    );
+
+    stopRobot();
+    return;
+  }
+
+  reverseAttempts++;
+
+  turnDirection = dir;
+
+  // Opposite steering while reversing
+  steerDirection(-dir);
+
+  reversePhaseStarted = false;
+
+  state = REVERSING;
+  stateStart = millis();
+
+  Serial.println("REVERSING");
+}
+
+// ======================================
+// COUNT COLORED LINES
+// ======================================
+
+void updateLineCounter(int detectedLine) {
+
+  unsigned long now = millis();
+
+  if (detectedLine != 0) {
+    lastLineSeen = now;
+  }
+
+  // Release the line latch after
+  // the line disappears.
+  if (onLine &&
+      now - lastLineSeen >
+      LINE_RELEASE_TIME) {
+
+    onLine = false;
+  }
+
+  if (waitingToStop) {
+    return;
+  }
+
+  if (detectedLine == 0) {
+    return;
+  }
+
+  // Determine direction on first
+  // valid line, unless preset.
+  if (direction == 0) {
+    direction = detectedLine;
+
+    Serial.print("DIRECTION: ");
+
+    if (direction == 1) {
+      Serial.println("RIGHT");
+    } else {
+      Serial.println("LEFT");
+    }
+  }
+
+  // Only count the line matching
+  // the selected direction.
+  if (detectedLine != direction) {
+    return;
+  }
+
+  // Count each crossing only once.
+  if (onLine ||
+      now - lastLineTime <
+      LINE_COOLDOWN) {
+
+    return;
+  }
+
+  onLine = true;
+  lastLineTime = now;
+
+  lineCount++;
+
+  Serial.print("LINE COUNT: ");
+  Serial.println(lineCount);
+
+  if (lineCount >= TOTAL_LINES) {
+
+    waitingToStop = true;
+    finishTime = now;
+
+    Serial.println(
+      "FINAL LINE - FINISHING"
+    );
+  }
+
+  // Start the corner turn.
+  startTurn(direction);
+}
+
+// ======================================
+// SETUP
+// ======================================
+
+void setup() {
+
+  Serial.begin(9600);
+
+  pinMode(DIR_PIN, OUTPUT);
+  pinMode(PWM_PIN, OUTPUT);
+
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
+  digitalWrite(TRIG_PIN, LOW);
+
+  stopMotor();
+
+  steering.attach(SERVO_PIN);
+  steer(CENTER);
+
+  Serial.println("OPEN CHALLENGE");
+
+  // Initialize the Pixy2.
+  int8_t result = pixy.init();
+
+  if (result < 0) {
+
+    Serial.println(
+      "PIXY2 CONNECTION FAILED"
+    );
+
+    stopRobot();
+    return;
+  }
+
+  pixy.changeProg(
+    "color_connected_components"
+  );
+
+  state = DRIVING;
+
+  Serial.println("PIXY2 READY");
+
+  delay(2000);
+}
+
+// ======================================
+// MAIN LOOP
+// ======================================
+
+void loop() {
+
+  unsigned long now = millis();
+
+  if (state == STOPPED) {
+    stopMotor();
+    delay(100);
+    return;
+  }
+
+  // Stop after finishing three laps.
+  if (waitingToStop &&
+      now - finishTime >= STOP_DELAY) {
+
+    Serial.println("FINISH");
+    stopRobot();
+    return;
+  }
+
+  float distance = getDistance();
+
+  // Consecutive sensor-error check
+  if (distance < 0) {
+
+    sensorErrors++;
+    stopMotor();
+
+    if (sensorErrors >= 3) {
+
+      Serial.println(
+        "FRONT SENSOR FAILURE"
+      );
+
+      stopRobot();
+    }
+
+    delay(50);
+    return;
+  }
+
+  sensorErrors = 0;
+
+  // ==================================
+  // STATE 1: REVERSING
+  // ==================================
+
+  if (state == REVERSING) {
+
+    unsigned long elapsed =
+      now - stateStart;
+
+    // Wait for the servo to rotate.
+    if (elapsed < SERVO_SETTLE) {
+      stopMotor();
+      return;
+    }
+
+    // Reverse while steering
+    // opposite the desired turn.
+    if (elapsed <
+        SERVO_SETTLE + REVERSE_TIME) {
+
+      backward(REVERSE_SPEED);
+      return;
+    }
+
+    // Change from reverse to forward.
+    stopMotor();
+
+    // Start the appropriate turn.
+    startTurn(turnDirection);
+    return;
+  }
+
+  // ==================================
+  // STATE 2: TURNING
+  // ==================================
+
+  if (state == TURNING) {
+
+    unsigned long elapsed =
+      now - stateStart;
+
+    unsigned long requiredTime;
+
+    if (turnDirection == 1) {
+      requiredTime = RIGHT_TURN_TIME;
+    }
+    else {
+      requiredTime = LEFT_TURN_TIME;
+    }
+
+    // Give the steering time
+    // to reach the target angle.
+    if (elapsed < SERVO_SETTLE) {
+      stopMotor();
+      return;
+    }
+
+    // Emergency obstacle detection
+    if (distance <= EMERGENCY_DISTANCE) {
+
+      startReverse(turnDirection);
+      return;
+    }
+
+    // Count clear front readings
+    // only after most of the turn.
+    if (elapsed >= requiredTime &&
+        distance > CLEAR_DISTANCE) {
+
+      clearReadings++;
+    }
+    else {
+      clearReadings = 0;
+    }
+
+    // Return to straight driving.
+    if (clearReadings >= 2) {
+
+      stopMotor();
+      steer(CENTER);
+
+      state = DRIVING;
+
+      Serial.println(
+        "CORNER COMPLETE"
+      );
+
+      return;
+    }
+
+    // If still facing a wall,
+    // initiate another short maneuver.
+    if (elapsed >= requiredTime + 500) {
+
+      if (distance <= WALL_DISTANCE) {
+
+        startReverse(turnDirection);
+        return;
+      }
+
+      // Between 30 and 35 cm:
+      // stop instead of driving closer.
+      stopMotor();
+      return;
+    }
+
+    steerDirection(turnDirection);
+
+    forward(TURN_SPEED);
+
+    return;
+  }
+
+  // ==================================
+  // STATE 3: NORMAL DRIVING
+  // ==================================
+
+  if (state == DRIVING) {
+
+    int detectedLine = readTrackLine();
+
+    // Detect the first direction
+    // or count further crossings.
+    updateLineCounter(detectedLine);
+
+    // A line may have started
+    // a new turning state.
+    if (state != DRIVING) {
+      return;
+    }
+
+    // Wall directly ahead
+    if (distance <= WALL_DISTANCE) {
+
+      stopMotor();
+
+      // Without a recognized line,
+      // use the known course direction.
+      if (direction != 0) {
+
+        startReverse(direction);
+
+      } else {
+
+        // The robot does not yet know
+        // which direction the course runs.
+        Serial.println(
+          "DIRECTION UNKNOWN - STOP"
+        );
+
+        stopRobot();
+      }
+
+      return;
+    }
+
+    // Reset reverse count once
+    // the robot is safely clear.
+    if (distance > 45) {
+      reverseAttempts = 0;
+    }
+
+    // Otherwise drive straight.
+    steer(CENTER);
+    forward(MOTOR_SPEED);
+  }
+
+  delay(50);
+}
