@@ -113,7 +113,7 @@ The original car depended on a handheld radio transmitter and receiver. For WRO,
 
 The finished idea is simple: **the RC car provides the mechanical platform, while the Arduino and sensors turn it into a robot.**
 
-<!-- ADD BEST CURRENT ROBOT PHOTO HERE -->
+
 
 ---
 
